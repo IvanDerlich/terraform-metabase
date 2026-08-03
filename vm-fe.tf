@@ -1,5 +1,5 @@
 resource "openstack_compute_instance_v2" "vm_fe" {
-  name              = "tf_bastion"
+  name              = "tf_fe"
   image_id          = data.openstack_images_image_v2.ubuntu_2404.id
   flavor_id         = data.openstack_compute_flavor_v2.small.id
   key_pair          = var.key_name
@@ -9,6 +9,10 @@ resource "openstack_compute_instance_v2" "vm_fe" {
  network {
     name = "tf-net"
   }
+
+  depends_on = [
+    openstack_networking_subnet_v2.tf_subnet,
+  ]
 }
 
 data "openstack_networking_port_v2" "vm_fe_port" {

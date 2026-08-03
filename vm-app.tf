@@ -9,4 +9,8 @@ resource "openstack_compute_instance_v2" "vm_app" {
   network {
     name = "tf-net"
   }
+
+  depends_on = [
+    openstack_networking_subnet_v2.tf_subnet,
+  ]
 }

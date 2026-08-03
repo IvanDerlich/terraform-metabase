@@ -9,6 +9,10 @@ resource "openstack_compute_instance_v2" "vm_bastion" {
  network {
     name = "tf-net"
   }
+
+  depends_on = [
+    openstack_networking_subnet_v2.tf_subnet,
+  ]
 }
 
 data "openstack_networking_port_v2" "vm_bastion_port" {
