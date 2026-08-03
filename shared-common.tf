@@ -7,6 +7,11 @@ data "openstack_images_image_v2" "ubuntu_2404" {
   most_recent = true
 }
 
+data "openstack_images_image_v2" "srv_nginx_ubuntu2404" {
+  name        = "srv-nginx-ubuntu2404"
+  most_recent = true
+}
+
 data "openstack_compute_flavor_v2" "small" {
   vcpus = 1
   ram   = 2048
