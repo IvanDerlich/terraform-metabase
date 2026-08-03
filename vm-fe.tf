@@ -6,8 +6,8 @@ resource "openstack_compute_instance_v2" "vm_fe" {
   security_groups   = ["default"]
   availability_zone = "nodos-amd-2022"
 
-  network {
-    name = "net_umstack"
+ network {
+    name = "tf-net"
   }
 }
 
