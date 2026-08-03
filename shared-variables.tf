@@ -1,6 +1,6 @@
 variable "key_name" {
   type    = string
-  default = "Siderum" // <- reemplazar por el nombre de tu keypair
+  default = "edit_key_name" // <- reemplazar por el nombre de tu keypair
 }
 
 variable "pg_postgres_password" {
