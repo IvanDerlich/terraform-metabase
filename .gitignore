@@ -2,3 +2,4 @@
 *-openrc.sh
 .terraform.lock.hcl
 terraform.*
+vm-app.tf.ignore
