@@ -6,6 +6,8 @@ resource "openstack_compute_instance_v2" "vm_fe" {
   security_groups   = ["default"]
   availability_zone = "nodos-amd-2022"
 
+  user_data = file("${path.module}/templates/vm-fe.init.sh")
+
  network {
     name = "tf-net"
   }
