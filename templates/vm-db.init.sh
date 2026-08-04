@@ -71,4 +71,21 @@ else
     exit 1
 fi
 
+# 4. Load mobility dataset dump
+if [ ! -f /home/ubuntu/google-mobility.sql.gz ]; then
+    echo "[ERROR] File /home/ubuntu/google-mobility.sql.gz was not uploaded." >&2
+    exit 1
+fi
+
+gunzip -f /home/ubuntu/google-mobility.sql.gz
+
+if [ ! -f /home/ubuntu/google-mobility.sql ]; then
+    echo "[ERROR] File /home/ubuntu/google-mobility.sql was not created after unzip." >&2
+    exit 1
+fi
+
+sudo mysql metabase < /home/ubuntu/google-mobility.sql
+rm -f /home/ubuntu/google-mobility.sql
+echo "[OK] Mobility dataset imported and temporary SQL file removed."
+
 echo "=== Initialization completed: $(date) ==="

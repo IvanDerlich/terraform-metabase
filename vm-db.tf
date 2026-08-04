@@ -6,10 +6,6 @@ resource "openstack_compute_instance_v2" "vm_db" {
   security_groups   = [openstack_networking_secgroup_v2.tf_sg_db.name]
   availability_zone = "nodos-amd-2022"
 
-  user_data = templatefile("${path.module}/templates/vm-db.init.sh", {
-    db_password = var.pg_postgres_password
-  })
-
   network {
     uuid = openstack_networking_network_v2.tf_net.id
   }
