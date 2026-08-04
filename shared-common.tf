@@ -2,8 +2,8 @@ data "openstack_networking_network_v2" "ext_net" {
   name = "ext_net"
 }
 
-data "openstack_images_image_v2" "ubuntu_2404" {
-  name        = "ubuntu_2404"
+data "openstack_images_image_v2" "ubuntu_2604" {
+  name        = "ubuntu_2604"
   most_recent = true
 }
 

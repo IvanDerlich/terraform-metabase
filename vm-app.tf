@@ -1,21 +1,19 @@
 resource "openstack_compute_instance_v2" "vm_app" {
   name              = "tf_app"
-  image_id          = data.openstack_images_image_v2.ubuntu_2404.id
+  image_id          = data.openstack_images_image_v2.ubuntu_2604.id
   flavor_id         = data.openstack_compute_flavor_v2.small.id
   key_pair          = var.key_name
-  security_groups   = ["default"]
+  security_groups   = [openstack_networking_secgroup_v2.tf_sg_app.name]
   availability_zone = "nodos-amd-2022"
 
   user_data = templatefile("${path.module}/templates/vm-app.init.sh", {
     db_ip              = openstack_compute_instance_v2.vm_db.network.0.fixed_ip_v4
     fe_fip             = openstack_networking_floatingip_v2.tf_fe_fip.address
     fe_url             = "https://${replace(openstack_networking_floatingip_v2.tf_fe_fip.address, ".", "-")}.int.cloud.um.edu.ar/"
-    pg_n8n_password    = var.pg_n8n_password
-    n8n_encryption_key = var.n8n_encryption_key
   })
 
   network {
-    name = "tf-net"
+    uuid = openstack_networking_network_v2.tf_net.id
   }
 
   depends_on = [
