@@ -1,13 +1,5 @@
 locals {
-  db_init_script = templatefile("${path.module}/templates/vm-db.init.sh", {
-    db_password = var.pg_postgres_password
-  })
-
   vm_cloud_init_targets = {
-    bastion = {
-      instance_id = openstack_compute_instance_v2.vm_bastion.id
-      host_ip     = openstack_compute_instance_v2.vm_bastion.network.0.fixed_ip_v4
-    }
     fe = {
       instance_id = openstack_compute_instance_v2.vm_fe.id
       host_ip     = openstack_compute_instance_v2.vm_fe.network.0.fixed_ip_v4
@@ -19,73 +11,35 @@ locals {
   }
 }
 
-resource "terraform_data" "run_vm_db_init_after_upload" {
-  depends_on = [
-    terraform_data.upload_google_mobility_dump,
-    terraform_data.wait_vm_db_cloud_init,
-  ]
-
-  triggers_replace = [
-    openstack_compute_instance_v2.vm_db.id,
-    filesha256("${path.module}/google-mobility.sql.gz"),
-    sha256(local.db_init_script),
-  ]
-
-  connection {
-    type  = "ssh"
-    user  = "ubuntu"
-    host  = openstack_compute_instance_v2.vm_db.network.0.fixed_ip_v4
-    agent = true
-
-    bastion_host = openstack_networking_floatingip_v2.tf_bastion_fip.address
-    bastion_user = "ubuntu"
-  }
-
-  provisioner "file" {
-    content     = local.db_init_script
-    destination = "/home/ubuntu/vm-db.init.sh"
-  }
-
-  provisioner "remote-exec" {
-    inline = [
-      "set -euo pipefail",
-      "chmod +x /home/ubuntu/vm-db.init.sh",
-      "sudo /home/ubuntu/vm-db.init.sh",
-    ]
-  }
-}
-
-resource "terraform_data" "wait_vm_cloud_init" {
-  for_each = local.vm_cloud_init_targets
-
+resource "terraform_data" "wait_vm_bastion_cloud_init" {
   depends_on = [
     openstack_networking_floatingip_associate_v2.vm_bastion_fip,
+    openstack_compute_instance_v2.vm_bastion,
   ]
 
   triggers_replace = [
-    each.value.instance_id,
+    openstack_compute_instance_v2.vm_bastion.id,
+    openstack_networking_floatingip_v2.tf_bastion_fip.address,
   ]
 
   connection {
-    type  = "ssh"
-    user  = "ubuntu"
-    host  = each.value.host_ip
-    agent = true
-
-    bastion_host = openstack_networking_floatingip_v2.tf_bastion_fip.address
-    bastion_user = "ubuntu"
+    type    = "ssh"
+    user    = "ubuntu"
+    host    = openstack_networking_floatingip_v2.tf_bastion_fip.address
+    agent   = true
+    timeout = "10m"
   }
 
   provisioner "remote-exec" {
     inline = [
-      "sudo cloud-init status --wait >/dev/null 2>&1",
+      "sudo cloud-init status --wait >/dev/null 2>&1 || (echo 'cloud-init failed'; sudo cloud-init status --long || true; echo '--- /var/log/cloud-init-output.log ---'; sudo tail -n 200 /var/log/cloud-init-output.log || true; echo '--- /var/log/cloud-init.log ---'; sudo tail -n 200 /var/log/cloud-init.log || true; echo '--- build-log ---'; sudo cat /home/ubuntu/build-log-*.log 2>/dev/null || true; exit 1)",
     ]
   }
 }
 
 resource "terraform_data" "wait_vm_db_cloud_init" {
   depends_on = [
-    openstack_networking_floatingip_associate_v2.vm_bastion_fip,
+    terraform_data.wait_vm_bastion_cloud_init,
     openstack_compute_instance_v2.vm_db,
   ]
 
@@ -94,10 +48,11 @@ resource "terraform_data" "wait_vm_db_cloud_init" {
   ]
 
   connection {
-    type  = "ssh"
-    user  = "ubuntu"
-    host  = openstack_compute_instance_v2.vm_db.network.0.fixed_ip_v4
-    agent = true
+    type    = "ssh"
+    user    = "ubuntu"
+    host    = openstack_compute_instance_v2.vm_db.network.0.fixed_ip_v4
+    agent   = true
+    timeout = "10m"
 
     bastion_host = openstack_networking_floatingip_v2.tf_bastion_fip.address
     bastion_user = "ubuntu"
@@ -105,17 +60,37 @@ resource "terraform_data" "wait_vm_db_cloud_init" {
 
   provisioner "remote-exec" {
     inline = [
-      "sudo cloud-init status --wait >/dev/null 2>&1",
+      "sudo cloud-init status --wait >/dev/null 2>&1 || { echo '--- build-log ---'; sudo cat /home/ubuntu/build-log-*.log 2>/dev/null || true; exit 1; }",
     ]
   }
 }
 
-resource "terraform_data" "wait_vm_db_readiness_check" {
+resource "terraform_data" "wait_vm_cloud_init" {
+  for_each = local.vm_cloud_init_targets
+
   depends_on = [
-    terraform_data.run_vm_db_init_after_upload,
+    terraform_data.wait_vm_bastion_cloud_init,
   ]
 
   triggers_replace = [
-    terraform_data.run_vm_db_init_after_upload.id,
+    each.value.instance_id,
   ]
+
+  connection {
+    type    = "ssh"
+    user    = "ubuntu"
+    host    = each.value.host_ip
+    agent   = true
+    timeout = "10m"
+
+    bastion_host = openstack_networking_floatingip_v2.tf_bastion_fip.address
+    bastion_user = "ubuntu"
+  }
+
+  provisioner "remote-exec" {
+    inline = [
+      "sudo cloud-init status --wait >/dev/null 2>&1 || (echo 'cloud-init failed'; sudo cloud-init status --long || true; echo '--- /var/log/cloud-init-output.log ---'; sudo tail -n 200 /var/log/cloud-init-output.log || true; echo '--- /var/log/cloud-init.log ---'; sudo tail -n 200 /var/log/cloud-init.log || true; echo '--- build-log ---'; sudo cat /home/ubuntu/build-log-*.log 2>/dev/null || true; exit 1)",
+    ]
+  }
 }
+

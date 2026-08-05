@@ -1,16 +1,7 @@
 #!/usr/bin/env bash
+${common_header}
 
-# Stop on error (-e), treat unset variables as error (-u), print commands (-x)
-set -euxo pipefail
-
-LOG_DIR="/var/log/tf-init"
-LOG_FILE="$LOG_DIR/init_$(date +%Y%m%d_%H%M%S).log"
-
-mkdir -p "$LOG_DIR"
-
-exec > >(tee -i -a "$LOG_FILE") 2>&1
-
-echo "=== Initialization started: $(date) ==="
+echo "=== Front End Initialization started: $(date) ==="
 
 sudo apt update
 # sudo apt upgrade -y
@@ -67,4 +58,14 @@ else
   exit 1
 fi
 
-echo "=== Initialization completed: $(date) ==="
+echo "[INFO] Nginx is ready — visit: ${fe_url} (Metabase not ready yet)"
+
+metabase_deadline=$((SECONDS + 600))
+until curl -s http://localhost/api/health | grep -q '"status":"ok"'; do
+  [ $SECONDS -ge $metabase_deadline ] && { echo "[ERROR] Metabase did not become ready after 10 min" >&2; exit 1; }
+  echo "[WAIT] Metabase not ready yet... ($SECONDS s elapsed)"
+  sleep "$POLL_INTERVAL"
+done
+echo "[OK] Metabase is ready — visit: ${fe_url}"
+
+echo "=== Front End Initialization completed: $(date) ==="

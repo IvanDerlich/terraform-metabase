@@ -10,7 +10,6 @@ resource "terraform_data" "upload_google_mobility_dump" {
   triggers_replace = [
     openstack_compute_instance_v2.vm_db.id,
     filesha256(local.google_mobility_dump_path),
-    sha256(local.db_init_script),
   ]
 
   connection {

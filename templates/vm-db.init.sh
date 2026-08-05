@@ -1,16 +1,7 @@
 #!/usr/bin/env bash
+${common_header}
 
-# Stop on error (-e), treat unset variables as error (-u), print commands (-x)
-set -euxo pipefail
-
-LOG_DIR="/var/log/tf-init"
-LOG_FILE="$LOG_DIR/init_$(date +%Y%m%d_%H%M%S).log"
-
-mkdir -p "$LOG_DIR"
-
-exec > >(tee -i -a "$LOG_FILE") 2>&1
-
-echo "=== Initialization started: $(date) ==="
+echo "=== DB Initialization started: $(date) ==="
 
 # --- INSTALLATION ---
 sudo apt update
@@ -72,10 +63,12 @@ else
 fi
 
 # 4. Load mobility dataset dump
-if [ ! -f /home/ubuntu/google-mobility.sql.gz ]; then
-    echo "[ERROR] File /home/ubuntu/google-mobility.sql.gz was not uploaded." >&2
-    exit 1
-fi
+dump_deadline=$((SECONDS + 600))
+until [ -f /home/ubuntu/google-mobility.sql.gz ]; do
+  [ $SECONDS -ge $dump_deadline ] && { echo "[ERROR] google-mobility.sql.gz not uploaded after 10 min" >&2; exit 1; }
+  echo "[WAIT] Waiting for google-mobility.sql.gz upload... ($SECONDS s elapsed)"
+  sleep "$POLL_INTERVAL"
+done
 
 gunzip -f /home/ubuntu/google-mobility.sql.gz
 
@@ -88,4 +81,4 @@ sudo mysql metabase < /home/ubuntu/google-mobility.sql
 rm -f /home/ubuntu/google-mobility.sql
 echo "[OK] Mobility dataset imported and temporary SQL file removed."
 
-echo "=== Initialization completed: $(date) ==="
+echo "=== DB Initialization completed: $(date) ==="
