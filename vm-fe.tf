@@ -6,11 +6,11 @@ resource "openstack_compute_instance_v2" "vm_fe" {
   security_groups   = [openstack_networking_secgroup_v2.tf_sg_fe.name]
   availability_zone = "nodos-amd-2022"
 
-  user_data = templatefile("${path.module}/templates/vm-fe.init.sh", {
-    app_ip        = openstack_compute_instance_v2.vm_app.network.0.fixed_ip_v4
-    fe_url        = "https://${replace(openstack_networking_floatingip_v2.tf_fe_fip.address, ".", "-")}.int.cloud.um.edu.ar/"
-    common_header = file("${path.module}/templates/vm-common.sh")
-  })
+  #user_data = templatefile("${path.module}/templates/vm-fe.init.sh", {
+  #  app_ip        = openstack_compute_instance_v2.vm_app.network.0.fixed_ip_v4
+  #  fe_url        = "https://${replace(openstack_networking_floatingip_v2.tf_fe_fip.address, ".", "-")}.int.cloud.um.edu.ar/"
+  #  common_header = file("${path.module}/templates/vm-common.sh")
+  #})
 
  network {
    uuid = openstack_networking_network_v2.tf_net.id

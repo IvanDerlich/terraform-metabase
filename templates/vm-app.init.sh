@@ -24,6 +24,9 @@ sudo apt install docker-ce docker-ce-cli containerd.io docker-buildx-plugin dock
 sudo systemctl start docker 
 sudo systemctl enable docker
 
+# Run Metabase container
+sudo docker run -d -p 3000:3000 --name metabase metabase/metabase:latest 
+
 # --- DB READINESS POLLS ---
 port_deadline=$((SECONDS + 300))
 until nc -z "${db_ip}" 3306 2>/dev/null; do
@@ -51,9 +54,6 @@ done
 set -x
 echo "[OK] Mobility data loaded in DB"
 
-# Run Metabase container
-sudo docker run -d -p 3000:3000 --name metabase metabase/metabase:latest 
-
 # -------------------------------------------------------------
 # Metabase Headless Admin Setup
 # -------------------------------------------------------------
@@ -70,28 +70,19 @@ echo "[OK] Metabase is healthy. Extracting setup token..."
 # Fetch setup token (only exists before setup is completed)
 SETUP_TOKEN=$(curl -s http://localhost:3000/api/session/properties | jq -r '."setup-token"')
 
-SETUP_FIRST_NAME="${setup_first_name}"
-SETUP_LAST_NAME="${setup_last_name}"
-SETUP_EMAIL="${setup_email}"
-SETUP_PASSWORD="${setup_password}"
-DB_HOST="${db_ip}"
-DB_NAME="metabase"
-DB_USER="metabase_admin"
-DB_PASSWORD="${db_password}"
-
 if [ -n "$SETUP_TOKEN" ] && [ "$SETUP_TOKEN" != "null" ]; then
   echo "[INFO] Submitting setup API request with DB connection..."
 
   SETUP_PAYLOAD=$(jq -n \
     --arg token "$SETUP_TOKEN" \
-    --arg first_name "$SETUP_FIRST_NAME" \
-    --arg last_name "$SETUP_LAST_NAME" \
-    --arg email "$SETUP_EMAIL" \
-    --arg password "$SETUP_PASSWORD" \
-    --arg db_host "$DB_HOST" \
-    --arg db_name "$DB_NAME" \
-    --arg db_user "$DB_USER" \
-    --arg db_password "$DB_PASSWORD" \
+    --arg first_name "${setup_first_name}" \
+    --arg last_name "${setup_last_name}" \
+    --arg email "${setup_email}" \
+    --arg password "${setup_password}" \
+    --arg db_host "${db_ip}" \
+    --arg db_name "metabase" \
+    --arg db_user "metabase_admin" \
+    --arg db_password "${db_password}" \
     '{
       token: $token,
       user: {
@@ -129,10 +120,10 @@ if [ -n "$SETUP_TOKEN" ] && [ "$SETUP_TOKEN" != "null" ]; then
 
     SETUP_PAYLOAD_NO_DB=$(jq -n \
       --arg token "$SETUP_TOKEN" \
-      --arg first_name "$SETUP_FIRST_NAME" \
-      --arg last_name "$SETUP_LAST_NAME" \
-      --arg email "$SETUP_EMAIL" \
-      --arg password "$SETUP_PASSWORD" \
+      --arg first_name "${setup_first_name}" \
+      --arg last_name "${setup_last_name}" \
+      --arg email "${setup_email}" \
+      --arg password "${setup_password}" \
       '{
         token: $token,
         user: {

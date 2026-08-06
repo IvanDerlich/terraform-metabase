@@ -7,7 +7,7 @@ resource "openstack_compute_instance_v2" "vm_db" {
   availability_zone = "nodos-amd-2022"
 
   user_data = templatefile("${path.module}/templates/vm-db.init.sh", {
-    db_password   = var.pg_postgres_password
+    db_password   = var.mysql_password
     common_header = file("${path.module}/templates/vm-common.sh")
   })
 

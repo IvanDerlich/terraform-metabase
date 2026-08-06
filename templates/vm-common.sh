@@ -9,4 +9,4 @@ chown ubuntu:ubuntu "$LOG_FILE"
 # Redirect all stdout/stderr to both the terminal (cloud-init captures it) and the log file
 exec > >(tee -i -a "$LOG_FILE") 2>&1
 
-POLL_INTERVAL=0.3
+POLL_INTERVAL=10  #seconds between DB readiness polls

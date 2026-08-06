@@ -6,24 +6,20 @@ echo "=== DB Initialization started: $(date) ==="
 # --- INSTALLATION ---
 sudo apt update
 # sudo apt upgrade -y
-sudo apt install mysql-server vim -y
+sudo apt install mysql-server -y
 
-# --- NETWORK CONFIGURATION (OVERRIDE) ---
-sudo bash -c 'cat << EOF > /etc/mysql/mysql.conf.d/99-custom.cnf
-[mysqld]
-bind-address        = 0.0.0.0
-mysqlx-bind-address = 0.0.0.0
-EOF'
+# Update mysqlx-bind-address to 0.0.0.0
+sudo sed -i 's/^\s*#\?\s*bind-address\s*=.*/bind-address = 0.0.0.0/' $(grep -rl "bind-address" /etc/mysql/)
+sudo sed -i 's/^\s*#\?\s*mysqlx-bind-address\s*=.*/mysqlx-bind-address = 0.0.0.0/' /etc/mysql/mysql.conf.d/mysqld.cnf
 
-sudo chmod 644 /etc/mysql/mysql.conf.d/99-custom.cnf
+# Restart MySQL to apply changes
 sudo systemctl restart mysql
 
 # --- DATABASE AND USERS ---
-DB_PASS="${db_password}"
 sudo mysql <<EOF
 CREATE DATABASE IF NOT EXISTS metabase;
-CREATE USER IF NOT EXISTS 'metabase_admin'@'%' IDENTIFIED BY '$${DB_PASS}';
-ALTER USER 'metabase_admin'@'%' IDENTIFIED BY '$${DB_PASS}';
+CREATE USER IF NOT EXISTS 'metabase_admin'@'%' IDENTIFIED BY '${db_password}';
+ALTER USER 'metabase_admin'@'%' IDENTIFIED BY '${db_password}';
 GRANT ALL PRIVILEGES ON metabase.* TO 'metabase_admin'@'%';
 FLUSH PRIVILEGES;
 EOF
@@ -35,7 +31,7 @@ echo "Verifying user creation and permissions..."
 USER_EXISTS=$(sudo mysql -sse "SELECT COUNT(*) FROM mysql.user WHERE user='metabase_admin' AND host='%';")
 
 if [ "$USER_EXISTS" -eq 1 ]; then
-    echo "[OK] User 'metabase_admin'@'%' exists."
+    echo "[OK] User 'metabase_admin' exists."
 else
     echo "[ERROR] User 'metabase_admin'@'%' was not created." >&2
     exit 1
@@ -53,12 +49,12 @@ fi
 
 # 3. Verify real authentication using configured password
 set +x
-if mysql --protocol=TCP -h 127.0.0.1 -u metabase_admin -p"$DB_PASS" -e "USE metabase; SELECT 1;" >/dev/null 2>&1; then
+if mysql --protocol=TCP --host=127.0.0.1 --user=metabase_admin --password="${db_password}" -e "USE metabase; SELECT 1;" >/dev/null 2>&1; then
     set -x
-    echo "[OK] Login with metabase_admin and DB_PASS verified."
+    echo "[OK] Login with metabase_admin and db_password verified."
 else
     set -x
-    echo "[ERROR] Authentication failed for metabase_admin using DB_PASS." >&2
+    echo "[ERROR] Authentication failed for metabase_admin using db_password." >&2
     exit 1
 fi
 

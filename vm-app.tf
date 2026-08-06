@@ -8,7 +8,7 @@ resource "openstack_compute_instance_v2" "vm_app" {
 
   user_data = templatefile("${path.module}/templates/vm-app.init.sh", {
     db_ip              = openstack_compute_instance_v2.vm_db.network.0.fixed_ip_v4
-    db_password        = var.pg_postgres_password
+    db_password        = var.mysql_password
     fe_fip             = openstack_networking_floatingip_v2.tf_fe_fip.address
     fe_url             = "https://${replace(openstack_networking_floatingip_v2.tf_fe_fip.address, ".", "-")}.int.cloud.um.edu.ar/"
     setup_first_name    = var.metabase_setup_first_name

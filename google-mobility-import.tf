@@ -4,7 +4,8 @@ locals {
 
 resource "terraform_data" "upload_google_mobility_dump" {
   depends_on = [
-    terraform_data.wait_vm_db_cloud_init,
+    terraform_data.wait_vm_bastion_cloud_init,
+    openstack_compute_instance_v2.vm_db,
   ]
 
   triggers_replace = [
@@ -13,10 +14,10 @@ resource "terraform_data" "upload_google_mobility_dump" {
   ]
 
   connection {
-    type        = "ssh"
-    user        = "ubuntu"
-    host        = openstack_compute_instance_v2.vm_db.network.0.fixed_ip_v4
-    agent       = true
+    type  = "ssh"
+    user  = "ubuntu"
+    host  = openstack_compute_instance_v2.vm_db.network.0.fixed_ip_v4
+    agent = true
 
     bastion_host = openstack_networking_floatingip_v2.tf_bastion_fip.address
     bastion_user = "ubuntu"

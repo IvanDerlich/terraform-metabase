@@ -32,7 +32,7 @@ resource "terraform_data" "wait_vm_bastion_cloud_init" {
 
   provisioner "remote-exec" {
     inline = [
-      "sudo cloud-init status --wait >/dev/null 2>&1 || (echo 'cloud-init failed'; sudo cloud-init status --long || true; echo '--- /var/log/cloud-init-output.log ---'; sudo tail -n 200 /var/log/cloud-init-output.log || true; echo '--- /var/log/cloud-init.log ---'; sudo tail -n 200 /var/log/cloud-init.log || true; echo '--- build-log ---'; sudo cat /home/ubuntu/build-log-*.log 2>/dev/null || true; exit 1)",
+      "sudo bash -lc 'set -euo pipefail; tail -n +1 -F /var/log/cloud-init-output.log & tail_pid=$!; trap \"kill $tail_pid 2>/dev/null || true\" EXIT; sudo cloud-init status --wait >/dev/null 2>&1 || (echo \"cloud-init failed\"; sudo cloud-init status --long || true; echo \"--- /var/log/cloud-init-output.log ---\"; sudo tail -n 200 /var/log/cloud-init-output.log || true; echo \"--- /var/log/cloud-init.log ---\"; sudo tail -n 200 /var/log/cloud-init.log || true; echo \"--- build-log ---\"; sudo cat /home/ubuntu/build-log-*.log 2>/dev/null || true; exit 1)'",
     ]
   }
 }
@@ -41,6 +41,7 @@ resource "terraform_data" "wait_vm_db_cloud_init" {
   depends_on = [
     terraform_data.wait_vm_bastion_cloud_init,
     openstack_compute_instance_v2.vm_db,
+    terraform_data.upload_google_mobility_dump,
   ]
 
   triggers_replace = [
@@ -60,7 +61,7 @@ resource "terraform_data" "wait_vm_db_cloud_init" {
 
   provisioner "remote-exec" {
     inline = [
-      "sudo cloud-init status --wait >/dev/null 2>&1 || { echo '--- build-log ---'; sudo cat /home/ubuntu/build-log-*.log 2>/dev/null || true; exit 1; }",
+      "sudo bash -lc 'set -euo pipefail; tail -n +1 -F /var/log/cloud-init-output.log & tail_pid=$!; trap \"kill $tail_pid 2>/dev/null || true\" EXIT; sudo cloud-init status --wait >/dev/null 2>&1 || (echo \"cloud-init failed\"; sudo cloud-init status --long || true; echo \"--- /var/log/cloud-init-output.log ---\"; sudo tail -n 200 /var/log/cloud-init-output.log || true; echo \"--- /var/log/cloud-init.log ---\"; sudo tail -n 200 /var/log/cloud-init.log || true; echo \"--- build-log ---\"; sudo cat /home/ubuntu/build-log-*.log 2>/dev/null || true; exit 1)'",
     ]
   }
 }
@@ -89,7 +90,7 @@ resource "terraform_data" "wait_vm_cloud_init" {
 
   provisioner "remote-exec" {
     inline = [
-      "sudo cloud-init status --wait >/dev/null 2>&1 || (echo 'cloud-init failed'; sudo cloud-init status --long || true; echo '--- /var/log/cloud-init-output.log ---'; sudo tail -n 200 /var/log/cloud-init-output.log || true; echo '--- /var/log/cloud-init.log ---'; sudo tail -n 200 /var/log/cloud-init.log || true; echo '--- build-log ---'; sudo cat /home/ubuntu/build-log-*.log 2>/dev/null || true; exit 1)",
+      "sudo bash -lc 'set -euo pipefail; tail -n +1 -F /var/log/cloud-init-output.log & tail_pid=$!; trap \"kill $tail_pid 2>/dev/null || true\" EXIT; sudo cloud-init status --wait >/dev/null 2>&1 || (echo \"cloud-init failed\"; sudo cloud-init status --long || true; echo \"--- /var/log/cloud-init-output.log ---\"; sudo tail -n 200 /var/log/cloud-init-output.log || true; echo \"--- /var/log/cloud-init.log ---\"; sudo tail -n 200 /var/log/cloud-init.log || true; echo \"--- build-log ---\"; sudo cat /home/ubuntu/build-log-*.log 2>/dev/null || true; exit 1)'",
     ]
   }
 }

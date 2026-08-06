@@ -6,3 +6,19 @@
 ## Check env properly loaded
 
 make check-env
+
+## Initialize tofu
+
+make init
+
+## Provide Infrastructure
+
+make apply
+
+## Provide
+
+make destroy
+
+## Rebuild from scratch
+
+make restart

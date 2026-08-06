@@ -22,6 +22,18 @@ output "vm_ssh" {
   }
 }
 
+output "ssh_app_cmd" {
+  value = "ssh -o StrictHostKeyChecking=no -J ubuntu@${local.bastion_fip} ubuntu@${local.app_ip}"
+}
+
+output "ssh_fe_cmd" {
+  value = "ssh -o StrictHostKeyChecking=no -J ubuntu@${local.bastion_fip} ubuntu@${local.fe_ip}"
+}
+
+output "ssh_db_cmd" {
+  value = "ssh -o StrictHostKeyChecking=no -J ubuntu@${local.bastion_fip} ubuntu@${local.db_ip}"
+}
+
 output "vm_fips" {
   value = {
     bastion_fip = local.bastion_fip
